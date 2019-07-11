@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Wed Jun 26 19:25:54 2019
+
+@author: Joy Hill
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Thu Jun 28 12:03:41 2018
 
 @author: Joy Hill
@@ -13,19 +20,26 @@ Created on Tue Jun 20 22:14:07 2017
 """
 
 from pyomo.opt import SolverFactory
-from PNW_dispatch import model
+from PNW_dispatch import model as m1
+from PNW_dispatchLP import model as m2
 from pyomo.core import Var
+from pyomo.core import Constraint
 from pyomo.core import Param
 from operator import itemgetter
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import pyomo.environ as pyo
 
 def sim(days):
     
-    instance = model.create_instance('../Model_setup/PNW_data_file/data.dat')
+    instance = m1.create_instance('data.dat')
+    instance2 = m2.create_instance('data.dat')
     
+    instance2.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
     opt = SolverFactory("cplex")
+   
+    
     H = instance.HorizonHours
     D = 2
     K=range(1,H+1)
@@ -43,8 +57,9 @@ def sim(days):
     wind=[]
     flow=[]
     Generator=[]
+    Duals=[]
     
-    df_generators = pd.read_csv('../Model_setup/PNW_data_file/generators.csv',header=0)
+    df_generators = pd.read_csv('generators.csv',header=0)
     
     instance.ini_on["COLUMBIA_2"] = 1
     instance.ini_mwh_1["COLUMBIA_2"] = 300
@@ -88,6 +103,56 @@ def sim(days):
     #            
         PNW_result = opt.solve(instance)
         instance.solutions.load_from(PNW_result)   
+        
+        for z in instance2.zones:
+            
+            instance2.GasPrice[z] = instance2.SimGasPrice[z,day]
+            
+            for i in K:
+                instance2.HorizonDemand[z,i] = instance2.SimDemand[z,(day-1)*24+i]
+                instance2.HorizonWind[z,i] = instance2.SimWind[z,(day-1)*24+i]
+                instance2.HorizonSolar[z,i] = instance2.SimSolar[z,(day-1)*24+i]
+                instance2.HorizonMustRun[z,i] = instance2.SimMustRun[z,(day-1)*24+i]
+        
+        for d in range(1,D+1):
+            instance2.HorizonPath3_imports[d] = instance2.SimPath3_imports[day-1+d]
+            instance2.HorizonPath8_imports[d] = instance2.SimPath8_imports[day-1+d]
+            instance2.HorizonPath14_imports[d] = instance2.SimPath14_imports[day-1+d]
+            instance2.HorizonPath65_imports[d] = instance2.SimPath65_imports[day-1+d]
+            instance2.HorizonPath66_imports[d] = instance2.SimPath66_imports[day-1+d]
+            instance2.HorizonPNW_hydro[d] = instance2.SimPNW_hydro[day-1+d]
+            
+        for i in K:
+            instance2.HorizonReserves[i] = instance2.SimReserves[(day-1)*24+i] 
+            instance2.HorizonPath3_exports[i] = instance2.SimPath3_exports[(day-1)*24+i] 
+            instance2.HorizonPath8_exports[i] = instance2.SimPath8_exports[(day-1)*24+i] 
+            instance2.HorizonPath14_exports[i] = instance2.SimPath14_exports[(day-1)*24+i]
+            instance2.HorizonPath65_exports[i] = instance2.SimPath65_exports[(day-1)*24+i]             
+            instance2.HorizonPath66_exports[i] = instance2.SimPath66_exports[(day-1)*24+i]  
+            
+            instance2.HorizonPath3_minflow[i] = instance2.SimPath3_imports_minflow[(day-1)*24+i]             
+            instance2.HorizonPath8_minflow[i] = instance2.SimPath8_imports_minflow[(day-1)*24+i]             
+            instance2.HorizonPath14_minflow[i] = instance2.SimPath14_imports_minflow[(day-1)*24+i]             
+            instance2.HorizonPath65_minflow[i] = instance2.SimPath65_imports_minflow[(day-1)*24+i]  
+            instance2.HorizonPath66_minflow[i] = instance2.SimPath66_imports_minflow[(day-1)*24+i]  
+            instance2.HorizonPNW_hydro_minflow[i] = instance2.SimPNW_hydro_minflow[(day-1)*24+i]
+    #            
+        results = opt.solve(instance2)
+        instance2.solutions.load_from(results)   
+        
+        
+        print ("Duals")
+    
+        for c in instance2.component_objects(Constraint, active=True):
+    #        print ("   Constraint",c)
+            cobject = getattr(instance2, str(c))
+            if str(c) == 'Bal5Constraint':
+                for index in cobject:
+                     if int(index>0 and index<25):
+    #                print ("   Constraint",c)
+                         Duals.append((str(c),index+((day-1)*24), instance2.dual[cobject[index]]))
+    #            print ("      ", index, instance2.dual[cobject[index]])
+
      
         #The following section is for storing and sorting results
         for v in instance.component_objects(Var, active=True):
@@ -326,15 +391,17 @@ def sim(days):
     nrsv_pd=pd.DataFrame(nrsv,columns=('Generator','Time','Value','Zones'))
     solar_pd=pd.DataFrame(solar,columns=('Zone','Time','Value'))
     wind_pd=pd.DataFrame(wind,columns=('Zone','Time','Value'))
+    shadow_price=pd.DataFrame(Duals,columns=('Constraint','Time','Value'))
         
-    mwh_1_pd.to_csv('PNW/mwh_1.csv')
-    mwh_2_pd.to_csv('PNW/mwh_2.csv')
-    mwh_3_pd.to_csv('PNW/mwh_3.csv')
-    on_pd.to_csv('PNW/on.csv')
-    switch_pd.to_csv('PNW/switch.csv')
-    srsv_pd.to_csv('PNW/srsv.csv')
-    nrsv_pd.to_csv('PNW/nrsv.csv')
-    solar_pd.to_csv('PNW/solar_out.csv')
-    wind_pd.to_csv('PNW/wind_out.csv')
+    mwh_1_pd.to_csv('mwh_1.csv')
+    mwh_2_pd.to_csv('mwh_2.csv')
+    mwh_3_pd.to_csv('mwh_3.csv')
+    on_pd.to_csv('on.csv')
+    switch_pd.to_csv('switch.csv')
+    srsv_pd.to_csv('srsv.csv')
+    nrsv_pd.to_csv('nrsv.csv')
+    solar_pd.to_csv('solar_out.csv')
+    wind_pd.to_csv('wind_out.csv')
+    shadow_price.to_csv('shadow_price.csv')
     
     return None

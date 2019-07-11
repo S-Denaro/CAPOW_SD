@@ -86,7 +86,7 @@ def setup(year,hist,hist_year):
     
     if hist > 0:
         
-        caps = pd.read_excel('CA_data_file/must_run.xlsx',sheetname='nucs',header=0)
+        caps = pd.read_excel('CA_data_file/must_run.xlsx',sheet_name='nucs',header=0)
         y_cap = caps[caps['Year'] == hist_year]
         
         for i in range(0,len(df_calendar)):
@@ -123,9 +123,32 @@ def setup(year,hist,hist_year):
     ############
     #  sets    #
     ############
-    
     #write data.dat file
-    filename = 'CA_data_file/data.dat'
+    import os
+    from shutil import copy
+    from pathlib import Path
+
+
+    
+    path=str(Path.cwd().parent) +str (Path('/UCED/LR/CA' + str(year)))
+    os.makedirs(path,exist_ok=True)
+    
+    generators_file='CA_data_file/generators.csv'
+    dispatch_file='../UCED/CA_dispatch.py'
+    wrapper_file='../UCED/CA_wrapper_LR.py'
+    simulation_file='../UCED/CA_simulation_LR.py'
+    price_cal_file='../UCED/CA_price_calculation_LR.py'
+    #price_his_file='CA_data_file/prices_2010_2011.csv'
+    
+    copy(dispatch_file,path)
+    copy(wrapper_file,path)
+    copy(simulation_file,path)
+    copy(price_cal_file,path)
+   # copy(price_his_file,path)
+    copy(generators_file,path)
+   
+    
+    filename = path + '/data.dat'
     with open(filename, 'w') as f:
         
         # generator sets by zone

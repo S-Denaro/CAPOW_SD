@@ -6,19 +6,30 @@ Created on Tue Jun 20 22:14:07 2017
 """
 
 from pyomo.opt import SolverFactory
-from CA_dispatch import model
+from CA_dispatch import model as m1
+from CA_dispatchLP import model as m2
 from pyomo.core import Var
+from pyomo.core import Constraint
 from pyomo.core import Param
 from operator import itemgetter
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import pyomo.environ as pyo
 
 def sim(days):
     
-    instance = model.create_instance('../Model_setup/CA_data_file/data.dat')
+
+    instance = m1.create_instance('CA_data_file/data.dat')
+    instance2 = m2.create_instance('CA_data_file/data.dat')
     
+    
+    instance2.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
     opt = SolverFactory("cplex")
+    
+    
+    
+    
     H = instance.HorizonHours
     D = 2
     K=range(1,H+1)
@@ -36,8 +47,8 @@ def sim(days):
     wind=[]
     flow=[]
     Generator=[]
-    
-    df_generators = pd.read_csv('../Model_setup/CA_data_file/generators.csv',header=0)
+    Duals=[]
+    df_generators = pd.read_csv('CA_data_file/generators.csv',header=0)
     
     #max here can be (1,365)
     for day in range(1,days):
@@ -79,7 +90,73 @@ def sim(days):
     #            
         CAISO_result = opt.solve(instance)
         instance.solutions.load_from(CAISO_result)   
+    
+        for z in instance2.zones:
+            
+            instance2.GasPrice[z] = instance2.SimGasPrice[z,day]
+            
+            for i in K:
+                instance2.HorizonDemand[z,i] = instance2.SimDemand[z,(day-1)*24+i]
+                instance2.HorizonWind[z,i] = instance2.SimWind[z,(day-1)*24+i]
+                instance2.HorizonSolar[z,i] = instance2.SimSolar[z,(day-1)*24+i]
+                instance2.HorizonMustRun[z,i] = instance2.SimMustRun[z,(day-1)*24+i]
+        
+        for d in range(1,D+1):
+            instance2.HorizonPath66_imports[d] = instance2.SimPath66_imports[day-1+d]
+            instance2.HorizonPath46_SCE_imports[d] = instance2.SimPath46_SCE_imports[day-1+d]
+            instance2.HorizonPath61_imports[d] = instance2.SimPath61_imports[day-1+d]
+            instance2.HorizonPath42_imports[d] = instance2.SimPath42_imports[day-1+d]
+            instance2.HorizonPath24_imports[d] = instance2.SimPath24_imports[day-1+d]
+            instance2.HorizonPath45_imports[d] = instance2.SimPath45_imports[day-1+d]
+            instance2.HorizonPGE_valley_hydro[d] = instance2.SimPGE_valley_hydro[day-1+d]
+            instance2.HorizonSCE_hydro[d] = instance2.SimSCE_hydro[day-1+d]
+            
+        for i in K:
+            instance2.HorizonReserves[i] = instance2.SimReserves[(day-1)*24+i] 
+            instance2.HorizonPath42_exports[i] = instance2.SimPath42_exports[(day-1)*24+i] 
+            instance2.HorizonPath24_exports[i] = instance2.SimPath24_exports[(day-1)*24+i] 
+            instance2.HorizonPath45_exports[i] = instance2.SimPath45_exports[(day-1)*24+i]             
+            instance2.HorizonPath66_exports[i] = instance2.SimPath66_exports[(day-1)*24+i]  
+            
+            instance2.HorizonPath46_SCE_minflow[i] = instance2.SimPath46_SCE_imports_minflow[(day-1)*24+i]             
+            instance2.HorizonPath66_minflow[i] = instance2.SimPath66_imports_minflow[(day-1)*24+i] 
+            instance2.HorizonPath42_minflow[i] = instance2.SimPath42_imports_minflow[(day-1)*24+i] 
+            instance2.HorizonPath61_minflow[i] = instance2.SimPath61_imports_minflow[(day-1)*24+i]  
+            instance2.HorizonPGE_valley_hydro_minflow[i] = instance2.SimPGE_valley_hydro_minflow[(day-1)*24+i]
+            instance2.HorizonSCE_hydro_minflow[i] = instance2.SimSCE_hydro_minflow[(day-1)*24+i]
+        for j in instance.Generators:
+            for t in K:
+                if instance.on[j,t] == 1:
+                    instance2.on[j,t] = 1
+                    instance2.on[j,t].fixed = True
+                else: 
+                    instance.on[j,t] = 0
+                    instance2.on[j,t] = 0
+                    instance2.on[j,t].fixed = True
+                           
+                if instance.switch[j,t] == 1:
+                    instance2.switch[j,t] = 1
+                    instance2.switch[j,t].fixed = True
+                else:
+                    instance2.switch[j,t] = 0
+                    instance2.switch[j,t] = 0
+                    instance2.switch[j,t].fixed = True
+        results = opt.solve(instance2)
+        instance2.solutions.load_from(results)   
+    
+              
      
+        print ("Duals")
+    
+        for c in instance2.component_objects(Constraint, active=True):
+    #        print ("   Constraint",c)
+            cobject = getattr(instance2, str(c))
+            if str(c) in ['Bal1Constraint','Bal2Constraint','Bal3Constraint','Bal4Constraint']:
+                for index in cobject:
+                     if int(index>0 and index<25):
+    #                print ("   Constraint",c)
+                         Duals.append((str(c),index+((day-1)*24), instance2.dual[cobject[index]]))
+    #            print ("      ", index, instance2.dual[cobject[index]])
         #The following section is for storing and sorting results
         for v in instance.component_objects(Var, active=True):
             varobject = getattr(instance, str(v))
@@ -576,6 +653,7 @@ def sim(days):
     solar_pd=pd.DataFrame(solar,columns=('Zone','Time','Value'))
     wind_pd=pd.DataFrame(wind,columns=('Zone','Time','Value'))
     flow_pd=pd.DataFrame(flow,columns=('Source','Sink','Time','Value'))
+    shadow_price=pd.DataFrame(Duals,columns=('Constraint','Time','Value'))
     
     flow_pd.to_csv('CAISO/flow.csv')
     mwh_1_pd.to_csv('CAISO/mwh_1.csv')
@@ -587,5 +665,6 @@ def sim(days):
     nrsv_pd.to_csv('CAISO/nrsv.csv')
     solar_pd.to_csv('CAISO/solar_out.csv')
     wind_pd.to_csv('CAISO/wind_out.csv')
-    
+    shadow_price.to_csv('CAISO/shadow_price.csv')
+
     return None

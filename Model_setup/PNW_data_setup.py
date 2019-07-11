@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed May 03 15:01:31 2017
+Created on Tue Mar  5 16:37:53 2019
 
-@author: jdkern
+@author: sdenaro
 """
 
 import pandas as pd
@@ -59,9 +59,6 @@ def setup(year):
     #list zones
     zones = ['PNW']
     
-    #list plant types
-    types = ['ngct', 'ngcc', 'ngst', 'coal','oil', 'nuc','psh', 'slack', 'imports','hydro'] 
-    
     # must run generation   
     must_run_PNW = np.ones((len(df_load),1))*(df_must.loc[0,'PNW'])  
     df_total_must_run =pd.DataFrame(must_run_PNW)
@@ -71,9 +68,33 @@ def setup(year):
     ############
     #  sets    #
     ############
+    #write data.dat file
+    #write data.dat file
+    import os
+    from shutil import copy
+    from pathlib import Path
+
+
     
-    #write data.dat file  
-    filename = 'PNW_data_file/data.dat'
+    path=str(Path.cwd().parent) +str (Path('/UCED/LR/PNW' + str(year)))
+    os.makedirs(path,exist_ok=True)
+    
+    generators_file='PNW_data_file/generators.csv'
+    dispatch_file='../UCED/PNW_dispatch.py'
+    wrapper_file='../UCED/PNW_wrapper_LR.py'
+    simulation_file='../UCED/PNW_simulation_LR.py'
+    price_cal_file='../UCED/PNW_price_calculation_LR.py'
+    #price_his_file='CA_data_file/prices_2010_2011.csv'
+    
+    copy(dispatch_file,path)
+    copy(wrapper_file,path)
+    copy(simulation_file,path)
+    copy(price_cal_file,path)
+    #copy(price_his_file,path)
+    copy(generators_file,path)
+   
+    
+    filename = path + '/data.dat'
     with open(filename, 'w') as f:
         
         # generator sets by zone
