@@ -6,16 +6,16 @@
     <path
       path="Willamette/"/>
     <filenames
-    inflow_data_filename= "Synthetic_streamflows/Willamette_hist_streamflow.csv"
+    inflow_data_filename= "Synthetic_streamflows/synthetic_streamflows_Willamette.csv"
     hist_cp_filename= "Data/model_initialization/CP_hist_cyclo_discharge.xls"
     hist_res_filename= "Data/model_initialization/RES_hist_cyclo_rel_vol.xls"/>
   </data_inputs>
 
   <data_outputs>
     <filenames
-    hydropower_filename= "Output/hist_simulation/WillametteDAMS_hydropower.xlsx"
-    cpDischarge_filename= "Output/hist_simulation/Willamette_simulation_cpDischarge.xlsx"
-    summary_filename ="Output/hist_simulation/Willamette_simulation_summary.xlsx"/>
+    hydropower_filename= "Output/WillametteDAMS_hydropower.xlsx"
+    cpDischarge_filename= "Output/Willamette_simulation_cpDischarge.xlsx"
+    summary_filename ="Output/Willamette_simulation_summary.xlsx"/>
   </data_outputs>
 
 
