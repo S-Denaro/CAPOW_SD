@@ -80,11 +80,11 @@ for i in range(0,int(sim_years)):
     hist_year = 2011
 
     import CA_data_setup
-    CA_data_setup_LR.setup(year,hist,hist_year)
+    CA_data_setup.setup(year,hist,hist_year)
 
 
     # PACIFIC NORTHWEST
     import PNW_data_setup
-    PNW_data_setup_LR.setup(year)
+    PNW_data_setup.setup(year)
 
     print(i)

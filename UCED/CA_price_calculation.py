@@ -11,10 +11,10 @@ import numpy as np
 
 #==============================================================================
  
-df_mwh1 = pd.read_csv('CAISO/mwh_1.csv',header=0)
-df_mwh2 = pd.read_csv('CAISO/mwh_2.csv',header=0)
-df_mwh3 = pd.read_csv('CAISO/mwh_3.csv',header=0)
-df_gen = pd.read_csv('../Model_setup/CA_data_file/generators.csv',header=0)
+df_mwh1 = pd.read_csv('mwh_1.csv',header=0)
+df_mwh2 = pd.read_csv('mwh_2.csv',header=0)
+df_mwh3 = pd.read_csv('mwh_3.csv',header=0)
+df_gen = pd.read_csv('generators.csv',header=0)
 
 last_hour = df_mwh1['Time'].iloc[-1]
 
@@ -72,18 +72,18 @@ for i in range(0,no_days):
 
 hourly = pd.DataFrame(zonal_prices)
 hourly.columns = zones
-hourly.to_excel('CAISO/sim_hourly_prices.xlsx')
+hourly.to_excel('sim_hourly_prices.xlsx')
 
 daily = pd.DataFrame(daily_prices)
 daily.columns = zones
-daily.to_excel('CAISO/sim_daily_prices.xlsx')
+daily.to_excel('sim_daily_prices.xlsx')
 
 #########################################################
 #            Weight by zone and bias correct
 #########################################################
 
 #simulated prices
-df_prices = pd.read_csv('CAISO/prices_2010_2011.csv',header=0)
+df_prices = pd.read_csv('../../CAISO/prices_2010_2011.csv',header=0)
 num_days = int(len(df_prices)/24)
 
 #regression
@@ -109,8 +109,8 @@ for i in range(0,no_days):
 
 SD = pd.DataFrame(sim_daily)
 SD.columns = ['CAISO']
-SD.to_excel('CAISO/weighted_daily_prices.xlsx')
+SD.to_excel('weighted_daily_prices.xlsx')
 
 SH = pd.DataFrame(sim_hourly)
 SH.columns = ['CAISO']
-SH.to_excel('CAISO/weighted_hourly_prices.xlsx')
+SH.to_excel('weighted_hourly_prices.xlsx')
