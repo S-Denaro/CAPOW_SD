@@ -5,6 +5,8 @@
 .RData
 .Rhistory
 .Rapp.history
+# Python .pyc
+*.pyc
 # Temporary files
 *~
 ~$*.doc*
