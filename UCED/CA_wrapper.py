@@ -48,7 +48,7 @@ def sim(days):
     flow=[]
     Generator=[]
     Duals=[]
-    df_generators = pd.read_csv('CA_data_file/generators.csv',header=0)
+    df_generators = pd.read_csv('generators.csv',header=0)
 
     #max here can be (1,365)
     for day in range(1,days):
@@ -655,16 +655,16 @@ def sim(days):
     flow_pd=pd.DataFrame(flow,columns=('Source','Sink','Time','Value'))
     shadow_price=pd.DataFrame(Duals,columns=('Constraint','Time','Value'))
 
-    flow_pd.to_csv('CAISO/flow.csv')
-    mwh_1_pd.to_csv('CAISO/mwh_1.csv')
-    mwh_2_pd.to_csv('CAISO/mwh_2.csv')
-    mwh_3_pd.to_csv('CAISO/mwh_3.csv')
-    on_pd.to_csv('CAISO/on.csv')
-    switch_pd.to_csv('CAISO/switch.csv')
-    srsv_pd.to_csv('CAISO/srsv.csv')
-    nrsv_pd.to_csv('CAISO/nrsv.csv')
-    solar_pd.to_csv('CAISO/solar_out.csv')
-    wind_pd.to_csv('CAISO/wind_out.csv')
-    shadow_price.to_csv('CAISO/shadow_price.csv')
+    flow_pd.to_csv('flow.csv')
+    mwh_1_pd.to_csv('mwh_1.csv')
+    mwh_2_pd.to_csv('mwh_2.csv')
+    mwh_3_pd.to_csv('mwh_3.csv')
+    on_pd.to_csv('on.csv')
+    switch_pd.to_csv('switch.csv')
+    srsv_pd.to_csv('srsv.csv')
+    nrsv_pd.to_csv('nrsv.csv')
+    solar_pd.to_csv('solar_out.csv')
+    wind_pd.to_csv('wind_out.csv')
+    shadow_price.to_csv('shadow_price.csv')
 
     return None

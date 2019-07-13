@@ -401,6 +401,9 @@ for res in HP_res_list[0:4]:
 #remove the last 2 values, so that result is mod(365)
 Output_HP=Output_HP[:-1]
 
+#total HP as average hourly production 
+tot_HP=Output_HP.sum(axis=1)
+
 
 writer = pd.ExcelWriter(os.path.join(str(path),output_filenames['@hydropower_filename']))
 Output_HP.to_excel(writer,'Willamette_HP')
@@ -423,5 +426,4 @@ Output_volume.to_excel(writer,'volume_m3')
 Output_elev.to_excel(writer,'elevation_m')
 Output_HP.to_excel(writer,'dams_HP_MW')
 tot_HP.to_excel(writer,'total_HP_MW')
-total_hydro.to_excel(writer,'totalPlusMissing_HP_MW')
 writer.save()
