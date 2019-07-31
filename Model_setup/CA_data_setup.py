@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed May 03 15:01:31 2017
-
 @author: jdkern
 """
 
@@ -29,10 +28,15 @@ def setup(year,hist,hist_year):
     df_load = pd.read_csv('../Stochastic_engine/Synthetic_demand_pathflows/Sim_hourly_load.csv',header=0)
     df_load = df_load[zones]
     df_load = df_load.loc[year*8760:year*8760+8759]
-    df_load = df_load.reset_index()
+    df_load = df_load.reset_index(drop=True)
 
     ##time series of operational reserves for each zone
-    df_reserves = pd.read_csv('CA_data_file/reserves.csv',header=0)
+    rv= df_load.values
+    reserves = np.zeros((len(rv),1))
+    for i in range(0,len(rv)):
+            reserves[i] = np.sum(rv[i,:])*.04
+    df_reserves = pd.DataFrame(reserves)
+    df_reserves.columns = ['reserves']
 
     ##daily hydropower availability
     df_hydro = pd.read_csv('Hydro_setup/CA_dispatchable_hydro.csv',header=0)
@@ -119,7 +123,6 @@ def setup(year,hist,hist_year):
         df_total_must_run.to_csv('CA_data_file/must_run_hourly.csv')
 
 
-
     ############
     #  sets    #
     ############
@@ -127,7 +130,6 @@ def setup(year,hist,hist_year):
     import os
     from shutil import copy
     from pathlib import Path
-
 
 
     path=str(Path.cwd().parent) +str (Path('/UCED/LR/CA' + str(year)))

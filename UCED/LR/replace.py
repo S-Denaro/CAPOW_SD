@@ -20,10 +20,16 @@ def replace(file_path, pattern, subst):
     remove(file_path)
     #Move new file
     move(abs_path, file_path)
-    
+
 
 for i in range(0,200):
-    file_path='LR/PNW'+str(i)+'/PNW_price_calculation_LR.py'
-    pattern='../Model_setup/PNW_data_file/generators.csv'
-    subst='generators.csv' 
+    file_path='LR/CA'+str(i)+'/CA_dispatchLP.py'
+    pattern='from __future__ import division'
+    subst='from __future__ import division'
+    replace(file_path, pattern, subst)
+
+for i in range(0,200):
+    file_path='CA/PNW'+str(i)+'/CA_wrapper.py'
+    pattern='CAISO_result = opt.solve(instance)'
+    subst='CAISO_result = opt.solve(instance,tee=True,symbolic_solver_labels=True)'
     replace(file_path, pattern, subst)
