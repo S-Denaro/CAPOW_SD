@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Mar  5 16:37:53 2019
+
 @author: sdenaro
 """
 
@@ -26,7 +27,7 @@ def setup(year):
             reserves[i] = np.sum(rv[i,:])*.04
     df_reserves = pd.DataFrame(reserves)
     df_reserves.columns = ['reserves']
-
+    
     ##daily hydropower availability
     df_hydro = pd.read_csv('Hydro_setup/PNW_dispatchable_hydro.csv',header=0)
 
